@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<package format="2">
+
+  <name>lidar_tracker</name>
+  <version>1.0.0</version>
+  <description>Implements the LidarTracker nodelet for tracking of objects in 3D LiDAR scans</description>
+
+  <maintainer email="vrbamato@fel.cvut.cz">Matouš Vrba</maintainer>
+  <author email="vrbamato@fel.cvut.cz">Matouš Vrba</author>
+  <author email="pliskmic@fel.cvut.cz">Michal Pliska</author>
+  <author email="kratot13@fel.cvut.cz">Tomáš Kratochvíl</author>
+
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>rospy</depend>
+  <depend>dynamic_reconfigure</depend>
+  <depend>nodelet</depend>
+  <depend>std_msgs</depend>
+  <depend>image_transport</depend>
+  <depend>mrs_msgs</depend>
+  <depend>mrs_lib</depend>
+  <depend>cv_bridge</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>image_geometry</depend>
+  <depend>ouster_ros</depend>
+  <depend>uav_detect</depend>
+
+  <export>
+    <!-- The plugins.xml file defines nodelet as a plugin -->
+    <nodelet plugin="${prefix}/plugins.xml" />
+
+  </export>
+
+</package>
