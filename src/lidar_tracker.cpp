@@ -107,7 +107,7 @@ namespace lidar_tracker
     pub_target_ = nh.advertise<nav_msgs::Odometry>("tracked_drone", 10);
     pub_target_points_ = nh.advertise<PointCloud>("tracked_drone_points", 10);
     pub_innovation_ = nh.advertise<nav_msgs::Odometry>("tracked_drone_innovation", 10);
-    pub_profiling_info_ = nh.advertise<uav_detect::ProfilingInfo>("profiling_info", 1, true);
+    pub_profiling_info_ = nh.advertise<vofod::ProfilingInfo>("profiling_info", 1, true);
   
     /* kalman */
     // only position is measured
@@ -559,12 +559,12 @@ namespace lidar_tracker
   }
   //}
 
-  vec3_t msg_to_position(const uav_detect::Detection& det, const Eigen::Affine3d& tf)
+  vec3_t msg_to_position(const vofod::Detection& det, const Eigen::Affine3d& tf)
   {
     return tf * vec3_t(det.position.x, det.position.y, det.position.z);
   }
 
-  mat3_t msg_to_covariance(const uav_detect::Detection& det, const Eigen::Affine3d& tf)
+  mat3_t msg_to_covariance(const vofod::Detection& det, const Eigen::Affine3d& tf)
   {
     mat3_t ret;
     for (int r = 0; r < 3; r++)
@@ -628,7 +628,7 @@ namespace lidar_tracker
   //}
 
   /* processInitDetection() method //{ */
-  void LidarTracker::processInitDetection(const uav_detect::DetectionStamped::ConstPtr& msg)
+  void LidarTracker::processInitDetection(const vofod::DetectionStamped::ConstPtr& msg)
   {
     mrs_lib::ScopeTimer tim("new init det", throttle_period_);
     if (!msg)
@@ -663,7 +663,7 @@ namespace lidar_tracker
   //}
 
   /* processSingleDetection() method //{ */
-  void LidarTracker::processSingleDetection(const uav_detect::Detection& detection, const std_msgs::Header& header, const Eigen::Affine3d& msg2world_tf, const bool external)
+  void LidarTracker::processSingleDetection(const vofod::Detection& detection, const std_msgs::Header& header, const Eigen::Affine3d& msg2world_tf, const bool external)
   {
     publish_profile_start(profile_routines_t::process_detection);
     const vec3_t pos = msg_to_position(detection, msg2world_tf);
@@ -747,7 +747,7 @@ namespace lidar_tracker
   //}
 
   /* processDetections() method //{ */
-  void LidarTracker::processDetections(const uav_detect::Detections::ConstPtr& msg)
+  void LidarTracker::processDetections(const vofod::Detections::ConstPtr& msg)
   {
     publish_profile_start(profile_routines_t::process_detections);
     mrs_lib::ScopeTimer tim("new det", throttle_period_);
@@ -922,7 +922,7 @@ namespace lidar_tracker
     const geometry_msgs::Point& loc = ps->point;
     const vec3_t pos(loc.x, loc.y, loc.z);
 
-    uav_detect::Detection det;
+    vofod::Detection det;
     det.id = -1;
     det.confidence = 1.0;
     det.position.x = loc.x;
@@ -932,7 +932,7 @@ namespace lidar_tracker
       for (int c = 0; c < 3; c++)
         det.covariance.at(3 * r + c) = P0_(r, c);
 
-    uav_detect::Detections::Ptr dets = boost::make_shared<uav_detect::Detections>();
+    vofod::Detections::Ptr dets = boost::make_shared<vofod::Detections>();
     dets->header = ps->header;
     dets->detections.push_back(det);
 
@@ -963,24 +963,24 @@ namespace lidar_tracker
 
   void LidarTracker::publish_profile_start(const profile_routines_t routine_id)
   {
-    publish_profile_event(static_cast<uint32_t>(routine_id), uav_detect::ProfilingInfo::EVENT_TYPE_START);
+    publish_profile_event(static_cast<uint32_t>(routine_id), vofod::ProfilingInfo::EVENT_TYPE_START);
   }
 
   void LidarTracker::publish_profile_end(const profile_routines_t routine_id)
   {
-    publish_profile_event(static_cast<uint32_t>(routine_id), uav_detect::ProfilingInfo::EVENT_TYPE_END);
+    publish_profile_event(static_cast<uint32_t>(routine_id), vofod::ProfilingInfo::EVENT_TYPE_END);
   }
 
   void LidarTracker::publish_profile_event(const uint32_t routine_id, const uint8_t type)
   {
-    uav_detect::ProfilingInfo msg;
+    vofod::ProfilingInfo msg;
     msg.stamp = ros::Time::fromBoost(ros::WallTime::now().toBoost());
     msg.routine_id = routine_id;
     if (m_profile_last_seq.count(routine_id) == 0)
       m_profile_last_seq.insert({routine_id, 0});
     msg.event_sequence = m_profile_last_seq.at(routine_id);
     msg.event_type = type;
-    if (type == uav_detect::ProfilingInfo::EVENT_TYPE_END)
+    if (type == vofod::ProfilingInfo::EVENT_TYPE_END)
       m_profile_last_seq.at(routine_id)++;
     std::scoped_lock lck(pub_profiling_info_mtx_);
     pub_profiling_info_.publish(msg);

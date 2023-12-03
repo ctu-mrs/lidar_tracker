@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   mrs_msgs
   mrs_lib
   ouster_ros
-  uav_detect
+  vofod
 )
 
 generate_dynamic_reconfigure_options(

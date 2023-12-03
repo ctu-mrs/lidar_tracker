@@ -35,11 +35,11 @@
 /* long unsigned integer message */
 #include <std_msgs/UInt64.h>
 
-/* uav_detect */
-#include <uav_detect/Detection.h>
-#include <uav_detect/DetectionStamped.h>
-#include <uav_detect/Detections.h>
-#include <uav_detect/ProfilingInfo.h>
+/* vofod */
+#include <vofod/Detection.h>
+#include <vofod/DetectionStamped.h>
+#include <vofod/Detections.h>
+#include <vofod/ProfilingInfo.h>
 
 /* parallelism */
 #include <mrs_lib/subscribe_handler.h>
@@ -175,8 +175,8 @@ namespace lidar_tracker
     static constexpr uint32_t tentative_track_id = 0;
 
     // | ------------------ ROS-related variables ----------------- |
-    mrs_lib::SubscribeHandler<uav_detect::Detections> shandler_detection_;
-    mrs_lib::SubscribeHandler<uav_detect::DetectionStamped> shandler_init_detection_;
+    mrs_lib::SubscribeHandler<vofod::Detections> shandler_detection_;
+    mrs_lib::SubscribeHandler<vofod::DetectionStamped> shandler_init_detection_;
     mrs_lib::SubscribeHandler<sensor_msgs::PointCloud2> shandler_pointcloud_;
     mrs_lib::SubscribeHandler<sensor_msgs::PointCloud2> shandler_bg_pointcloud_;
 
@@ -209,9 +209,9 @@ namespace lidar_tracker
     void callbackDroneClicked(const geometry_msgs::PointStamped::ConstPtr& ps);
     void loadDynRecConfig();
 
-    void processSingleDetection(const uav_detect::Detection& detection, const std_msgs::Header& header, const Eigen::Affine3d& msg2world_tf, const bool external = false);
-    void processInitDetection(const uav_detect::DetectionStamped::ConstPtr& msg);
-    void processDetections(const uav_detect::Detections::ConstPtr& msg);
+    void processSingleDetection(const vofod::Detection& detection, const std_msgs::Header& header, const Eigen::Affine3d& msg2world_tf, const bool external = false);
+    void processInitDetection(const vofod::DetectionStamped::ConstPtr& msg);
+    void processDetections(const vofod::Detections::ConstPtr& msg);
     void processLidar(const sensor_msgs::PointCloud2::ConstPtr& msg);
     void processBgPointcloud(const sensor_msgs::PointCloud2::ConstPtr& msg);
 
