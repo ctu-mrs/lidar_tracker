@@ -8,15 +8,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_compile_options("-DEIGEN_INITIALIZE_MATRICES_BY_NAN")
 
 find_package(catkin REQUIRED COMPONENTS
-  image_transport
   roscpp
-  rospy
+  nodelet
+  message_generation
+  message_runtime
   dynamic_reconfigure
-  std_msgs
+  image_transport
+  image_geometry
   cv_bridge
   tf2_ros
   tf2_geometry_msgs
-  image_geometry
+  std_msgs
+  sensor_msgs
+  geometry_msgs
   mrs_msgs
   mrs_lib
   ouster_ros
@@ -41,7 +45,19 @@ generate_messages(DEPENDENCIES
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES LidarTracker
-  CATKIN_DEPENDS roscpp mrs_lib image_transport std_msgs
+  CATKIN_DEPENDS
+  roscpp
+  nodelet
+  message_runtime
+  dynamic_reconfigure
+  mrs_lib
+  image_transport
+  mrs_msgs
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  ouster_ros
+  vofod
 )
 
 include_directories(include
