@@ -4,11 +4,13 @@ min_external_detection_count: 1
 buffer_length: 10
 transform_lookup_timeout: 0.5 # seconds
 message_throttle_period: 1.0 # seconds
+
 # after no onboard detections are associated to a track for this amount of time,
 # it is no longer considered to be tracked onboard and external detections can
 # again be associated to it
 tracking_timeout: 2.0 # seconds
-# if there is no current track, publish a message with all zeros to reset the Rviz marker
+
+# if there is no current track, publish a dummy message to reset the Rviz marker
 no_track:
   publish_empty: true
   empty_state: [0.0, 0.0, -20.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -38,8 +40,8 @@ lkf:
   # the process noise covariance matrix
   Q:
     position: 0.01
-    velocity: 0.2
-    acceleration: 0.3
+    velocity: 0.8
+    acceleration: 0.05
   # the state uncertainty covariance matrix
   P:
     # the "radius" of P is obtained as radius_multiplier*cbrt(P)
@@ -54,7 +56,7 @@ lkf:
     init:
       position: 0.3
       velocity: 1.0
-      acceleration: 1.0
+      acceleration: 0.05
   # the measurement uncertainty covariance matrix
   R:
     coeff: 0.1
