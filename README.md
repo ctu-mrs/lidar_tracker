@@ -34,7 +34,7 @@ roscd lidar_tracker/tmux/simulation     # change directory to the one containing
 
 After this, you should see something like the following:
 
-![LiDAR tracker running in the Gazebo simulator](https://github.com/ctu-mrs/lidar_tracker/raw/gifs/lidar_tracker_gazebo.gif)
+![LiDAR tracker running in the Gazebo simulator](https://github.com/ctu-mrs/lidar_tracker/raw/gifs/lidar_tracker_sim.gif)
 
 The red sphere in Rviz on the right is the detection of the other UAV, and the green cubes represent the occupied voxels.
 The red arrow represents the filtered position of the target, its direction corresponds to the direction of the estimated velocity, and the smaller purple sphere represents the uncertainty covariance of the position estimate.
