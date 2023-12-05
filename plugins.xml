@@ -1,5 +1,0 @@
-<library path="lib/libLidarTracker">
-  <class name="lidar_tracker/LidarTracker" type="lidar_tracker::LidarTracker" base_class_type="nodelet::Nodelet">
-    <description>LidarTracker nodelet for tracking objects in LiDAR scans</description>
-  </class>
-</library>
