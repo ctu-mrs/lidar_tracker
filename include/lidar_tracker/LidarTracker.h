@@ -37,7 +37,6 @@
 
 /* vofod */
 #include <vofod/Detection.h>
-#include <vofod/DetectionStamped.h>
 #include <vofod/Detections.h>
 #include <vofod/ProfilingInfo.h>
 
@@ -106,21 +105,11 @@ namespace lidar_tracker
 
   struct track_t
   {
-    track_t(const uint32_t id, statecov_t sc0, const ros::Time& stamp, const double confidence, const bool external=false)
+    track_t(const uint32_t id, statecov_t sc0, const ros::Time& stamp, const double confidence)
       : id(id), sc(std::move(sc0)), last_prediction(stamp), last_correction(stamp), n_corrections(1), confidence(confidence), point_cloud(nullptr), point_cloud_indices(nullptr)
     {
-      if (external)
-      {
-        n_external_detections = 1;
-        n_onboard_detections = 0;
-        last_onboard_det_stamp = ros::Time(0);
-      }
-      else
-      {
-        n_external_detections = 0;
-        n_onboard_detections = 1;
-        last_onboard_det_stamp = stamp;
-      }
+      n_onboard_detections = 1;
+      last_onboard_det_stamp = stamp;
     };
     uint32_t id;
     statecov_t sc;
@@ -129,7 +118,6 @@ namespace lidar_tracker
     ros::Time last_onboard_det_stamp; // last time an onboard detection was associated to this track
     ros::Time last_prediction; // last time this track was updated using pointcloud tracking
     ros::Time last_correction; // last time this track was corrected using any means
-    uint32_t n_external_detections;
     uint32_t n_onboard_detections;
     uint32_t n_corrections;
     double confidence;
@@ -176,7 +164,6 @@ namespace lidar_tracker
 
     // | ------------------ ROS-related variables ----------------- |
     mrs_lib::SubscribeHandler<vofod::Detections> shandler_detection_;
-    mrs_lib::SubscribeHandler<vofod::DetectionStamped> shandler_init_detection_;
     mrs_lib::SubscribeHandler<sensor_msgs::PointCloud2> shandler_pointcloud_;
     mrs_lib::SubscribeHandler<sensor_msgs::PointCloud2> shandler_bg_pointcloud_;
 
@@ -196,11 +183,9 @@ namespace lidar_tracker
     // | ---------------------- msg callbacks --------------------- |
     std::unique_ptr<mrs_lib::DynamicReconfigureMgr<lidar_tracker::covmatConfig>> m_drmgr;
 
-    std::thread init_detection_thread_;
     std::thread detection_thread_;
     std::thread pointcloud_thread_;
     std::thread bg_pointcloud_thread_;
-    void initDetectionLoop();
     void detectionLoop();
     void pointcloudLoop();
     void bgPointcloudLoop();
@@ -209,8 +194,7 @@ namespace lidar_tracker
     void callbackDroneClicked(const geometry_msgs::PointStamped::ConstPtr& ps);
     void loadDynRecConfig();
 
-    void processSingleDetection(const vofod::Detection& detection, const std_msgs::Header& header, const Eigen::Affine3d& msg2world_tf, const bool external = false);
-    void processInitDetection(const vofod::DetectionStamped::ConstPtr& msg);
+    void processSingleDetection(const vofod::Detection& detection, const std_msgs::Header& header, const Eigen::Affine3d& msg2world_tf);
     void processDetections(const vofod::Detections::ConstPtr& msg);
     void processLidar(const sensor_msgs::PointCloud2::ConstPtr& msg);
     void processBgPointcloud(const sensor_msgs::PointCloud2::ConstPtr& msg);
@@ -236,10 +220,8 @@ namespace lidar_tracker
     double radius_min_;
     double radius_max_;
     int min_onboard_detection_count_;
-    int min_external_detection_count_;
     ros::Duration transform_lookup_timeout_;
     ros::Duration throttle_period_;
-    ros::Duration tracking_timeout_;
     ros::Duration prediction_horizon_;
     ros::Duration prediction_sampling_period_;
 

@@ -40,11 +40,9 @@
 
       <!-- Subscribers -->
       <remap from="~points_in" to="os_cloud_nodelet/points" />
-      <remap from="~external_detections_in" to="drone_client/detection_array" />
       <remap from="~detections_in" to="vofod/detections$(arg suf)" />
       <remap from="~bg_points_in" to="vofod/background_pc$(arg suf)" />
       <remap from="~rangefinder_in" to="mavros/distance_sensor/garmin" />
-      <remap from="~init_detection_in" to="initial_detection_selector/selected_detection" />
       <remap from="/clicked_point" to="DISABLE" />
 
       <!-- Publishers -->

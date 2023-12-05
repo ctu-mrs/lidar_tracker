@@ -35,10 +35,8 @@ namespace lidar_tracker
   
     param_loader.loadParam("static_frame_id", static_frame_id_);
     param_loader.loadParam("min_onboard_detection_count", min_onboard_detection_count_);
-    param_loader.loadParam("min_external_detection_count", min_external_detection_count_);
     param_loader.loadParam("transform_lookup_timeout", transform_lookup_timeout_);
     param_loader.loadParam("message_throttle_period", throttle_period_);
-    param_loader.loadParam("tracking_timeout", tracking_timeout_);
     param_loader.loadParam("no_track/publish_empty", no_track_pub_empty_);
     if (no_track_pub_empty_)
     {
@@ -85,13 +83,11 @@ namespace lidar_tracker
     mrs_lib::SubscribeHandlerOptions shopts(nh);
     shopts.no_message_timeout = ros::Duration(5.0);
     mrs_lib::construct_object(shandler_detection_, shopts, "detections_in");
-    mrs_lib::construct_object(shandler_init_detection_, shopts, "init_detection_in");
     mrs_lib::construct_object(shandler_pointcloud_, shopts, "points_in");
     mrs_lib::construct_object(shandler_bg_pointcloud_, shopts, "bg_points_in");
     sub_drone_ = nh.subscribe("/clicked_point", 1, &LidarTracker::callbackDroneClicked, this);
     m_tf_listener_ptr = std::make_unique<tf2_ros::TransformListener>(m_tf_buffer);
   
-    init_detection_thread_ = std::thread(&LidarTracker::initDetectionLoop, this);
     detection_thread_ = std::thread(&LidarTracker::detectionLoop, this);
     pointcloud_thread_ = std::thread(&LidarTracker::pointcloudLoop, this);
     bg_pointcloud_thread_ = std::thread(&LidarTracker::bgPointcloudLoop, this);
@@ -266,16 +262,10 @@ namespace lidar_tracker
     const auto best_track_it = std::max_element(std::begin(m_latest_tracks), std::end(m_latest_tracks),
                                                 [](const auto& el1, const auto& el2)
                                                 {
-                                                  // if the number of onboard detections of both elements is the same,
-                                                  // compare them using external detections
-                                                  if (el1.n_onboard_detections == el2.n_onboard_detections)
-                                                    return el1.n_external_detections < el2.n_external_detections;
-                                                  // otherwise, onboard detections take precedence
-                                                  else
-                                                    return el1.n_onboard_detections < el2.n_onboard_detections;
+                                                  return el1.n_onboard_detections < el2.n_onboard_detections;
                                                 });
     const bool best_track_exists = best_track_it != std::end(m_latest_tracks);
-    const bool best_track_confirmed = best_track_exists && (best_track_it->n_onboard_detections >= (uint32_t)min_onboard_detection_count_ || best_track_it->n_external_detections >= (uint32_t)min_external_detection_count_);
+    const bool best_track_confirmed = best_track_exists && best_track_it->n_onboard_detections >= (uint32_t)min_onboard_detection_count_;
     const bool best_track_updated_now = best_track_exists && best_track_it->last_correction == cloud_stamp;
     if (best_track_exists && best_track_confirmed && best_track_updated_now)
     {
@@ -627,43 +617,8 @@ namespace lidar_tracker
   }
   //}
 
-  /* processInitDetection() method //{ */
-  void LidarTracker::processInitDetection(const vofod::DetectionStamped::ConstPtr& msg)
-  {
-    mrs_lib::ScopeTimer tim("new init det", throttle_period_);
-    if (!msg)
-      return;
-
-    // ensure that the pointcloud buffer and tracking state are not updated while the new detections are being propagated
-    std::scoped_lock tracking_lck(m_tracking_mtx);
-    loadDynRecConfig();
-    tim.checkpoint("mtx lock");
-
-    const bool onboard_tracking =
-        std::any_of(std::begin(m_latest_tracks), std::end(m_latest_tracks), [this](const track_t& track) { return track.isTrackedOnboard(tracking_timeout_); });
-    if (onboard_tracking)
-    {
-      NODELET_INFO_STREAM_THROTTLE(1.0, "[processInitDetection]: Already tracking using onboard detections, ignoring external detection.");
-      return;
-    }
-    else
-      NODELET_INFO_STREAM_THROTTLE(1.0, "[processInitDetection]: Processing a new external detection.");
-
-    const auto tf_opt = getTransformToWorld(msg->header.frame_id, msg->header.stamp);
-    if (!tf_opt.has_value())
-    {
-      NODELET_ERROR_THROTTLE(1.0, "[processInitDetection]: Could not find transformation of message to the static coordinate frame, skipping.");
-      return;
-    }
-    const Eigen::Affine3d tf = tf_opt.value();
-    tim.checkpoint("tf lookup");
-
-    processSingleDetection(msg->detection, msg->header, tf, true);
-  }
-  //}
-
   /* processSingleDetection() method //{ */
-  void LidarTracker::processSingleDetection(const vofod::Detection& detection, const std_msgs::Header& header, const Eigen::Affine3d& msg2world_tf, const bool external)
+  void LidarTracker::processSingleDetection(const vofod::Detection& detection, const std_msgs::Header& header, const Eigen::Affine3d& msg2world_tf)
   {
     publish_profile_start(profile_routines_t::process_detection);
     const vec3_t pos = msg_to_position(detection, msg2world_tf);
@@ -675,7 +630,7 @@ namespace lidar_tracker
     const statecov_t sc0{x0, P0};
 
     const auto INIT_CONFIDENCE = 0.5;
-    track_t cur_track(tentative_track_id, sc0, header.stamp, INIT_CONFIDENCE, external);
+    track_t cur_track(tentative_track_id, sc0, header.stamp, INIT_CONFIDENCE);
     bool lost_track = false;
     // update the track to the latest received pointcloud
     for (const auto& [cloud, world2sensor_tf] : m_pc_buffer)
@@ -722,22 +677,12 @@ namespace lidar_tracker
       // assign the track a new ID instead of the tentative ID
       cur_track.id = m_last_track_id++;
       m_latest_tracks.emplace_back(cur_track);
-      if (external)
-        NODELET_INFO_STREAM("[ProcessSingleDetection]: New track # " << m_last_track_id - 1 << " was initialized from external detection #" << detection.id);
-      else
-        NODELET_INFO_STREAM("[ProcessSingleDetection]: New track # " << m_last_track_id - 1 << " was initialized from detection #" << detection.id);
+      NODELET_INFO_STREAM("[ProcessSingleDetection]: New track # " << m_last_track_id - 1 << " was initialized from detection #" << detection.id);
       publishUpdatedMessages(cur_track.last_correction);
     } else
     { // otherwise if an association was found, just increase its number of detections
-      if (external)
-      {
-        closest_track_it->n_external_detections++;
-      }
-      else
-      {
-        closest_track_it->n_onboard_detections++;
-        closest_track_it->last_onboard_det_stamp = header.stamp;
-      }
+      closest_track_it->n_onboard_detections++;
+      closest_track_it->last_onboard_det_stamp = header.stamp;
       NODELET_INFO_STREAM_THROTTLE(1.0, "[ProcessSingleDetection]: \033[1;32mA detection #" << detection.id << " was associated to track #" << closest_track_it->id << " with distance "
                                                                     << closest_track_dist << "m\033[0m");
       publishUpdatedMessages(closest_track_it->last_correction);
@@ -778,17 +723,6 @@ namespace lidar_tracker
     publish_profile_end(profile_routines_t::process_detections);
   }
   //}
-
-  void LidarTracker::initDetectionLoop()
-  {
-    const ros::WallDuration timeout(0.1);
-    while (ros::ok())
-    {
-      const auto msg_ptr = shandler_init_detection_.waitForNew(timeout);
-      if (msg_ptr)
-        processInitDetection(msg_ptr);
-    }
-  }
 
   void LidarTracker::detectionLoop()
   {
