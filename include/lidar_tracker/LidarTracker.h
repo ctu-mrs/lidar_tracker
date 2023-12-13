@@ -228,6 +228,7 @@ namespace lidar_tracker
     // | ----------------- pc processing variables ---------------- |
     std::string static_frame_id_;
 
+    float m_downsample_leaf_size;
     float m_exclude_box_offset_x;
     float m_exclude_box_offset_y;
     float m_exclude_box_offset_z;

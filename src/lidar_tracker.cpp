@@ -58,6 +58,7 @@ namespace lidar_tracker
     param_loader.loadParam("association/cluster/max_size", max_cluster_size_);
     param_loader.loadParam("association/cluster/min_background_dist", min_background_dist_);
   
+    param_loader.loadParam("input_filter/downsample_leaf_size", m_downsample_leaf_size);
     param_loader.loadParam("input_filter/exclude_box/offset/x", m_exclude_box_offset_x);
     param_loader.loadParam("input_filter/exclude_box/offset/y", m_exclude_box_offset_y);
     param_loader.loadParam("input_filter/exclude_box/offset/z", m_exclude_box_offset_z);
@@ -165,10 +166,13 @@ namespace lidar_tracker
     ros::Time cloud_stamp;
     pcl_conversions::fromPCL(cloud_filtered->header.stamp, cloud_stamp);
 
-    pcl::VoxelGrid<Point> vg;
-    vg.setInputCloud(cloud_filtered);
-    vg.setLeafSize(0.5f, 0.5f, 0.5f);
-    vg.filter(*cloud_filtered);
+    if (m_downsample_leaf_size > 0.0f)
+    {
+      pcl::VoxelGrid<Point> vg;
+      vg.setInputCloud(cloud_filtered);
+      vg.setLeafSize(m_downsample_leaf_size, m_downsample_leaf_size, m_downsample_leaf_size);
+      vg.filter(*cloud_filtered);
+    }
 
     const ros::Time& msg_stamp = msg->header.stamp;
 
