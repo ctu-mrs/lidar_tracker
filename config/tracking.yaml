@@ -17,6 +17,8 @@ prediction:
 
 # parameters of input pointcloud filtering
 input_filter:
+  # leaf size of the VoxelGrid filter applied to the input pointcloud. Set to zero to disable.
+  downsample_leaf_size: 0.5 # meters
   # points inside the box, defined by *uav_exclude_box*, relative to the sensor, are discarded
   # this is used to filter out the MAV itself from the pointcloud
   exclude_box:
