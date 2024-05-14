@@ -6,7 +6,7 @@ message_throttle_period: 1.0 # seconds
 
 # if there is no current track, publish a dummy message to reset the Rviz marker
 no_track:
-  publish_empty: true
+  publish_empty: false
   empty_state: [0.0, 0.0, -20.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
   empty_covariance_value: 0.0
 
