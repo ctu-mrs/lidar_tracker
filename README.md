@@ -44,7 +44,7 @@ Finally, the red line is the target's predicted trajectory for the next two seco
 
 * Volumetric Flying Object Detection: [https://github.com/ctu-mrs/vofod](https://github.com/ctu-mrs/vofod)
 * MRS UAV System: [https://github.com/ctu-mrs/mrs_uav_system](https://github.com/ctu-mrs/mrs_uav_system)
-* Webpage with related multimedia materials: [https://mrs.felk.cvut.cz/flying-object-detection](https://mrs.felk.cvut.cz/flying-object-detection)
+* Webpage with related multimedia materials: [https://mrs.fel.cvut.cz/flying-object-detection](https://mrs.fel.cvut.cz/flying-object-detection)
 
 ## Cite as
 
